@@ -25,7 +25,7 @@ export default function AuthPage() {
         const res = await signUp.email({ email, password, name });
         if (res.error) throw new Error(res.error.message ?? "Sign up failed.");
       }
-      router.replace("/app/dashboard");
+      router.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -94,7 +94,7 @@ export default function AuthPage() {
               <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-ink/40">or</span></div>
             </div>
             <button
-              onClick={() => signIn.social({ provider: "github", callbackURL: "/app/dashboard" })}
+              onClick={() => signIn.social({ provider: "github", callbackURL: "/dashboard" })}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-ink/15 py-2 text-sm hover:bg-ink/5"
             >
               <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor">

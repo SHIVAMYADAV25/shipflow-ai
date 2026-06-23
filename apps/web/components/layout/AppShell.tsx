@@ -1,20 +1,21 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { signOut, useSession } from "@/lib/auth/client";
 import { Spinner } from "@/components/ui";
 
 const NAV = [
-  { href: "/app/dashboard", label: "Dashboard", icon: "◈" },
-  { href: "/app/projects", label: "Projects", icon: "◉" },
-  { href: "/app/workspaces", label: "Workspace", icon: "⬡" },
-  { href: "/app/integrations/github", label: "GitHub", icon: "⌥" },
-  { href: "/app/billing", label: "Billing", icon: "◎" },
+  { href: "/dashboard", label: "Dashboard", icon: "◈" },
+  { href: "/projects", label: "Projects", icon: "◉" },
+  { href: "/workspaces", label: "Workspace", icon: "⬡" },
+  { href: "/integrations/github", label: "GitHub", icon: "⌥" },
+  { href: "/billing", label: "Billing", icon: "◎" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
 
   return (
@@ -46,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="border-t border-ink/10 px-3 py-3">
           <div className="mb-2 truncate text-xs text-ink/50">{session?.user?.email ?? "—"}</div>
           <button
-            onClick={() => signOut()}
+            onClick={() => signOut({ fetchOptions: { onSuccess: () => router.replace("/auth") } })}
             className="w-full rounded-md px-3 py-1.5 text-left text-xs text-ink/60 hover:bg-ink/5"
           >
             Sign out

@@ -28,8 +28,6 @@ import {
 
 // ---------------------------------------------------------------------------
 // Enums
-// All value lists are imported from @shipflow/common/enums -- the single
-// source of truth shared with the Zod schemas. Do not hardcode strings here.
 // ---------------------------------------------------------------------------
 
 export const orgRoleEnum = pgEnum("org_role", [...ORG_ROLES]);
@@ -43,6 +41,100 @@ export const reviewAgentTypeEnum = pgEnum("review_agent_type", [...REVIEW_AGENT_
 export const reviewSeverityEnum = pgEnum("review_severity", [...REVIEW_SEVERITIES]);
 export const reviewStatusEnum = pgEnum("review_status", [...REVIEW_STATUSES]);
 export const discoveryRoleEnum = pgEnum("discovery_role", [...DISCOVERY_ROLES]);
+
+// ---------------------------------------------------------------------------
+// BetterAuth identity tables
+//
+// DESIGN NOTE: BetterAuth requires its tables to be named exactly "user",
+// "session", "account", and "verification" (singular, lowercase) and the
+// "user.id" column must be text (it generates nanoid/cuid values, not UUIDs).
+//
+// We keep these here -- not in a separate auth-schema.ts -- so that
+// drizzle.config.ts has a single schema entry point and drizzle-kit generates
+// one coherent migration that covers both BetterAuth tables and our SaaS
+// tables.  All ShipFlow FK columns that reference a user use text("...") to
+// match BetterAuth's id type.
+// ---------------------------------------------------------------------------
+
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const session = pgTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+  },
+  (t) => ({
+    userIdIdx: index("session_user_id_idx").on(t.userId),
+  }),
+);
+
+export const account = pgTable(
+  "account",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userIdIdx: index("account_user_id_idx").on(t.userId),
+  }),
+);
+
+export const verification = pgTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    identifierIdx: index("verification_identifier_idx").on(t.identifier),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Core tenancy
@@ -62,24 +154,12 @@ export const organizations = pgTable("organizations", {
   slugIdx: uniqueIndex("organizations_slug_idx").on(t.slug),
 }));
 
-// Global user identity (BetterAuth owns this table's auth-relevant columns)
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: varchar("email", { length: 320 }).notNull(),
-  name: varchar("name", { length: 256 }),
-  image: text("image"),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  emailIdx: uniqueIndex("users_email_idx").on(t.email),
-}));
-
-// Many-to-many: a user can belong to multiple orgs with a role per org
+// Many-to-many: a user can belong to multiple orgs with a role per org.
+// userId is text to match BetterAuth's user.id type.
 export const orgMembers = pgTable("org_members", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   role: orgRoleEnum("role").notNull().default("developer"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -92,7 +172,7 @@ export const orgInvitations = pgTable("org_invitations", {
   orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
   email: varchar("email", { length: 320 }).notNull(),
   role: orgRoleEnum("role").notNull().default("developer"),
-  invitedByUserId: uuid("invited_by_user_id").notNull().references(() => users.id),
+  invitedByUserId: text("invited_by_user_id").notNull().references(() => user.id),
   acceptedAt: timestamp("accepted_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -109,7 +189,7 @@ export const projects = pgTable("projects", {
   orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
-  createdByUserId: uuid("created_by_user_id").notNull().references(() => users.id),
+  createdByUserId: text("created_by_user_id").notNull().references(() => user.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -121,7 +201,7 @@ export const repositories = pgTable("repositories", {
   projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   githubRepoId: varchar("github_repo_id", { length: 64 }).notNull(),
   installationId: varchar("installation_id", { length: 64 }).notNull(),
-  fullName: varchar("full_name", { length: 512 }).notNull(), // e.g. "org/repo"
+  fullName: varchar("full_name", { length: 512 }).notNull(),
   url: text("url").notNull(),
   defaultBranch: varchar("default_branch", { length: 256 }).notNull().default("main"),
   isActive: boolean("is_active").notNull().default(true),
@@ -142,11 +222,11 @@ export const featureRequests = pgTable("feature_requests", {
   projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 512 }).notNull(),
   description: text("description").notNull(),
-  sourceChannel: varchar("source_channel", { length: 64 }).notNull().default("manual"), // email, ticket, call, manual
+  sourceChannel: varchar("source_channel", { length: 64 }).notNull().default("manual"),
   status: featureStatusEnum("status").notNull().default("new"),
-  priority: varchar("priority", { length: 32 }).notNull().default("medium"), // low/medium/high/urgent
+  priority: varchar("priority", { length: 32 }).notNull().default("medium"),
   isDuplicateOfFeatureId: uuid("is_duplicate_of_feature_id"),
-  createdByUserId: uuid("created_by_user_id").notNull().references(() => users.id),
+  createdByUserId: text("created_by_user_id").notNull().references(() => user.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -154,13 +234,12 @@ export const featureRequests = pgTable("feature_requests", {
   statusIdx: index("feature_requests_status_idx").on(t.status),
 }));
 
-// Discovery Q&A thread between the AI agent and the requester
 export const discoveryMessages = pgTable("discovery_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   featureId: uuid("feature_id").notNull().references(() => featureRequests.id, { onDelete: "cascade" }),
   role: discoveryRoleEnum("role").notNull(),
   content: text("content").notNull(),
-  authorUserId: uuid("author_user_id").references(() => users.id),
+  authorUserId: text("author_user_id").references(() => user.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
   featureIdx: index("discovery_messages_feature_idx").on(t.featureId),
@@ -177,7 +256,7 @@ export const prds = pgTable("prds", {
   acceptanceCriteria: jsonb("acceptance_criteria").$type<{ id: string; criterion: string; userStoryId?: string }[]>().notNull().default([]),
   edgeCases: jsonb("edge_cases").$type<string[]>().notNull().default([]),
   successMetrics: jsonb("success_metrics").$type<string[]>().notNull().default([]),
-  approvedByUserId: uuid("approved_by_user_id").references(() => users.id),
+  approvedByUserId: text("approved_by_user_id").references(() => user.id),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -192,7 +271,7 @@ export const tasks = pgTable("tasks", {
   description: text("description"),
   status: taskStatusEnum("status").notNull().default("todo"),
   orderIndex: integer("order_index").notNull().default(0),
-  userStoryId: varchar("user_story_id", { length: 64 }), // links back to prd.userStories[].id
+  userStoryId: varchar("user_story_id", { length: 64 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -236,8 +315,8 @@ export const reviews = pgTable("reviews", {
   filePath: text("file_path"),
   lineNumber: integer("line_number"),
   relatedAcceptanceCriterionId: varchar("related_acceptance_criterion_id", { length: 64 }),
-  reviewRunId: uuid("review_run_id").notNull(), // groups all issues from one AI review pass
-  resolvedByUserId: uuid("resolved_by_user_id").references(() => users.id),
+  reviewRunId: uuid("review_run_id").notNull(),
+  resolvedByUserId: text("resolved_by_user_id").references(() => user.id),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -253,8 +332,8 @@ export const reviews = pgTable("reviews", {
 export const releases = pgTable("releases", {
   id: uuid("id").primaryKey().defaultRandom(),
   featureId: uuid("feature_id").notNull().references(() => featureRequests.id, { onDelete: "cascade" }),
-  approvedByUserId: uuid("approved_by_user_id").notNull().references(() => users.id),
-  readinessScore: integer("readiness_score"), // 0-100
+  approvedByUserId: text("approved_by_user_id").notNull().references(() => user.id),
+  readinessScore: integer("readiness_score"),
   notes: text("notes"),
   releasedAt: timestamp("released_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -279,10 +358,9 @@ export const subscriptions = pgTable("subscriptions", {
   orgIdx: uniqueIndex("subscriptions_org_idx").on(t.orgId),
 }));
 
-// Raw webhook audit log -- used for idempotency (dedupe by externalEventId) and debugging
 export const webhookEvents = pgTable("webhook_events", {
   id: uuid("id").primaryKey().defaultRandom(),
-  source: varchar("source", { length: 32 }).notNull(), // "github" | "razorpay"
+  source: varchar("source", { length: 32 }).notNull(),
   externalEventId: varchar("external_event_id", { length: 256 }).notNull(),
   eventType: varchar("event_type", { length: 128 }).notNull(),
   payload: jsonb("payload").notNull(),
@@ -294,8 +372,22 @@ export const webhookEvents = pgTable("webhook_events", {
 }));
 
 // ---------------------------------------------------------------------------
-// Relations (enables type-safe `with: {...}` queries)
+// Relations
 // ---------------------------------------------------------------------------
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  memberships: many(orgMembers),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, { fields: [session.userId], references: [user.id] }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, { fields: [account.userId], references: [user.id] }),
+}));
 
 export const organizationsRelations = relations(organizations, ({ many, one }) => ({
   members: many(orgMembers),
@@ -306,18 +398,14 @@ export const organizationsRelations = relations(organizations, ({ many, one }) =
   }),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
-  memberships: many(orgMembers),
-}));
-
 export const orgMembersRelations = relations(orgMembers, ({ one }) => ({
   organization: one(organizations, {
     fields: [orgMembers.orgId],
     references: [organizations.id],
   }),
-  user: one(users, {
+  user: one(user, {
     fields: [orgMembers.userId],
-    references: [users.id],
+    references: [user.id],
   }),
 }));
 
@@ -364,10 +452,7 @@ export const prdsRelations = relations(prds, ({ one, many }) => ({
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
-  prd: one(prds, {
-    fields: [tasks.prdId],
-    references: [prds.id],
-  }),
+  prd: one(prds, { fields: [tasks.prdId], references: [prds.id] }),
 }));
 
 export const pullRequestsRelations = relations(pullRequests, ({ one, many }) => ({
