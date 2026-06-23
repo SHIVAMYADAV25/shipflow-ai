@@ -1,0 +1,38 @@
+{
+  "name": "@shipflow/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/routers/_app.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./router-type": "./src/routers/_app.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@shipflow/ai": "workspace:*",
+    "@shipflow/auth": "workspace:*",
+    "@shipflow/common": "workspace:*",
+    "@shipflow/db": "workspace:*",
+    "@shipflow/github": "workspace:*",
+    "@shipflow/inngest": "workspace:*",
+    "@shipflow/logger": "workspace:*",
+    "@trpc/server": "^11.0.0",
+    "drizzle-orm": "^0.33.0",
+    "inngest": "^3.27.0",
+    "razorpay": "^2.9.4",
+    "superjson": "^2.2.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.5.0"
+  }
+}

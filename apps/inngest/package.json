@@ -1,0 +1,30 @@
+{
+  "name": "@shipflow/inngest-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/server.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@shipflow/ai": "workspace:*",
+    "@shipflow/common": "workspace:*",
+    "@shipflow/db": "workspace:*",
+    "@shipflow/github": "workspace:*",
+    "@shipflow/inngest": "workspace:*",
+    "@shipflow/logger": "workspace:*",
+    "drizzle-orm": "^0.33.0",
+    "express": "^4.21.0",
+    "inngest": "^3.27.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.0"
+  }
+}

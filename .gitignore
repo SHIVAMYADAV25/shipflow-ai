@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+dist
+.turbo
+out
+build
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Vercel
+.vercel
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Drizzle generated migrations (optional)
+# Keep this ONLY if migrations are generated in deployment
+# Remove this line if you want migrations committed
+# packages/db/drizzle
+
+# IDE
+.vscode
+.idea
+
+# TypeScript
+*.tsbuildinfo

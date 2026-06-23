@@ -1,0 +1,30 @@
+{
+  "name": "shipflow-ai",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=18.18.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.6.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @shipflow/db generate",
+    "db:migrate": "pnpm --filter @shipflow/db migrate",
+    "db:studio": "pnpm --filter @shipflow/db studio",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "prettier": "^3.3.0",
+    "turbo": "^2.1.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
