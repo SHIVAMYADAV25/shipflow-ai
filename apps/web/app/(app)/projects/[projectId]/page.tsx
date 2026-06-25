@@ -36,7 +36,7 @@ export default function ProjectDetailPage() {
             {openFeatures} open · {inReview} in review · {shipped} shipped
           </p>
         </div>
-        <Link href={`/app/projects/${projectId}/features`}>
+        <Link href={`/projects/${projectId}/features`}>
           <Button>+ New Feature Request</Button>
         </Link>
       </div>
@@ -77,11 +77,11 @@ export default function ProjectDetailPage() {
           {features.isLoading ? (
             <SkeletonList />
           ) : featureList.length === 0 ? (
-            <EmptyTab icon="💡" label="No feature requests yet" cta={<Link href={`/app/projects/${projectId}/features`}><Button size="sm">Add the first feature →</Button></Link>} />
+            <EmptyTab icon="💡" label="No feature requests yet" cta={<Link href={`/projects/${projectId}/features`}><Button size="sm">Add the first feature →</Button></Link>} />
           ) : (
             <div className="flex flex-col gap-2">
               {featureList.map((f) => (
-                <Link key={f.id} href={`/app/projects/${projectId}/features/${f.id}`}>
+                <Link key={f.id} href={`/projects/${projectId}/features/${f.id}`}>
                   <Card className="cursor-pointer transition-shadow hover:shadow-md">
                     <CardContent className="flex items-center justify-between gap-4 py-4">
                       <div className="min-w-0">
@@ -105,7 +105,7 @@ export default function ProjectDetailPage() {
           {pullRequests.isLoading ? (
             <SkeletonList />
           ) : prList.length === 0 ? (
-            <EmptyTab icon="🔀" label="No pull requests yet" cta={<Link href={`/app/projects/${projectId}/integrations/github?projectId=${projectId}`}><Button size="sm" variant="outline">Connect a repository →</Button></Link>} />
+            <EmptyTab icon="🔀" label="No pull requests yet" cta={<Link href={`/projects/${projectId}/integrations/github?projectId=${projectId}`}><Button size="sm" variant="outline">Connect a repository →</Button></Link>} />
           ) : (
             <div className="flex flex-col gap-2">
               {prList.map((pr: any) => {
@@ -126,7 +126,7 @@ export default function ProjectDetailPage() {
                       <div className="flex shrink-0 items-center gap-2">
                         {blocking > 0 && <SeverityBadge severity="blocking" />}
                         {nonBlocking > 0 && <SeverityBadge severity="non_blocking" />}
-                        <Link href={`/app/projects/${projectId}/reviews?prId=${pr.id}`}>
+                        <Link href={`/projects/${projectId}/reviews?prId=${pr.id}`}>
                           <Button size="sm" variant="outline">Reviews →</Button>
                         </Link>
                       </div>
@@ -144,7 +144,7 @@ export default function ProjectDetailPage() {
             <SkeletonList />
           ) : repoList.length === 0 ? (
             <EmptyTab icon="🐙" label="No repositories connected" cta={
-              <Link href={`/app/integrations/github?projectId=${projectId}`}>
+              <Link href={`/integrations/github?projectId=${projectId}`}>
                 <Button size="sm">Connect GitHub repository →</Button>
               </Link>
             } />

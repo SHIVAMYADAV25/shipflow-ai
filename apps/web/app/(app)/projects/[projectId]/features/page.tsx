@@ -70,7 +70,7 @@ export default function FeaturesPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {features.data?.map((f) => (
-            <Link key={f.id} href={`/app/projects/${projectId}/features/${f.id}`}>
+            <Link key={f.id} href={`/projects/${projectId}/features/${f.id}`}>
               <Card className="cursor-pointer transition-shadow hover:shadow-md">
                 <CardBody className="flex items-start justify-between gap-4">
                   <div className="min-w-0">

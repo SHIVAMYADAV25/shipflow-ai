@@ -22,7 +22,7 @@ export default function GithubIntegrationPage() {
     setForm({ githubRepoId: "", installationId: "", fullName: "", url: "", defaultBranch: "main" });
   }
 
-  const GITHUB_APP_URL = `https://github.com/apps/${process.env.NEXT_PUBLIC_GITHUB_APP_SLUG ?? "shipflow-ai"}/installations/new`;
+  const GITHUB_APP_URL = `https://github.com/apps/${process.env.NEXT_PUBLIC_GITHUB_APP_SLUG ?? "shipflow-ai-dev"}/installations/new`;
 
   return (
     <div className="flex flex-col gap-6">

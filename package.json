@@ -16,7 +16,8 @@
     "db:generate": "pnpm --filter @shipflow/db generate",
     "db:migrate": "pnpm --filter @shipflow/db migrate",
     "db:studio": "pnpm --filter @shipflow/db studio",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "kill": "taskkill /F /IM node.exe"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",

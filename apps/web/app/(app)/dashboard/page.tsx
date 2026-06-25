@@ -22,7 +22,7 @@ export default function DashboardPage() {
           icon="🏢"
           title="No organization yet"
           description="Create your first workspace to start shipping features."
-          action={<Link href="/app/workspaces" className="mt-2 inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white">Create Workspace</Link>}
+          action={<Link href="/workspaces" className="mt-2 inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white">Create Workspace</Link>}
         />
       ) : (
         <>
@@ -35,9 +35,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader><h3 className="text-sm font-medium text-ink">Quick links</h3></CardHeader>
             <CardBody className="flex flex-wrap gap-3">
-              <Link href="/app/projects" className="rounded-md border border-ink/15 px-3 py-2 text-sm hover:bg-ink/5">→ Projects</Link>
-              <Link href="/app/integrations/github" className="rounded-md border border-ink/15 px-3 py-2 text-sm hover:bg-ink/5">→ GitHub Integration</Link>
-              <Link href="/app/billing" className="rounded-md border border-ink/15 px-3 py-2 text-sm hover:bg-ink/5">→ Billing</Link>
+              <Link href="/projects" className="rounded-md border border-ink/15 px-3 py-2 text-sm hover:bg-ink/5">→ Projects</Link>
+              <Link href="/integrations/github" className="rounded-md border border-ink/15 px-3 py-2 text-sm hover:bg-ink/5">→ GitHub Integration</Link>
+              <Link href="/billing" className="rounded-md border border-ink/15 px-3 py-2 text-sm hover:bg-ink/5">→ Billing</Link>
             </CardBody>
           </Card>
         </>

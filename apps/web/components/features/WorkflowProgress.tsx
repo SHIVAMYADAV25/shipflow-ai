@@ -1,6 +1,6 @@
 "use client";
-import { Skeleton } from "./shadcn/skeleton";
-import { Progress } from "./shadcn/progress";
+import { Skeleton } from "../ui/shadcn/skeleton";
+import { Progress } from "../ui/progress";
 
 type WorkflowStage =
   | "discovery"
